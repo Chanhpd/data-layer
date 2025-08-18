@@ -51,6 +51,12 @@ class MainViewModel(
     var receivedFileStatus by mutableStateOf<String?>(null)
         private set
 
+    /**
+     * Status of watch face installation
+     */
+    var watchFaceInstallStatus by mutableStateOf<String?>(null)
+        private set
+
     @SuppressLint("VisibleForTests")
     override fun onDataChanged(dataEvents: DataEventBuffer) {
         Log.d(TAG, "onDataChanged: Processing ${dataEvents.count} events")
@@ -112,6 +118,14 @@ class MainViewModel(
             )
         )
         Log.d(TAG, "Capability changed: $capabilityInfo")
+    }
+
+    /**
+     * Update watch face installation status
+     */
+    fun updateWatchFaceInstallStatus(status: String) {
+        watchFaceInstallStatus = status
+        Log.d(TAG, "Watch face install status updated: $status")
     }
 
     /**
