@@ -40,6 +40,7 @@ class DataLayerListenerService : WearableListenerService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val watchFaceManager by lazy { WatchFaceManager(this) }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun onCreate() {
         super.onCreate()
         // Register for watch face change broadcasts
@@ -243,7 +244,9 @@ class DataLayerListenerService : WearableListenerService() {
 
     private fun sendWatchFaceChangeBroadcast(watchFaceId: String) {
         try {
-            val intent = Intent("com.example.wear.WATCH_FACE_CHANGED").apply {
+            val intent = Intent("com.example.wear.WATCH_FACE_CHANGED").setPackage(/* TODO: provide the application ID. For example: */
+                packageName
+            ).apply {
                 putExtra("watch_face_id", watchFaceId)
             }
             sendBroadcast(intent)
