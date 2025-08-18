@@ -1,28 +1,32 @@
-/* While this template provides a good starting point for using Wear Compose, you can always
- * take a look at https://github.com/android/wear-os-samples/tree/main/ComposeStarter to find the
- * most up to date changes to the libraries and their usages.
- */
-
 package com.example.wear.presentation
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.compose.runtime.Composable
+import androidx.wear.compose.material.MaterialTheme
 import com.example.wear.MainApplication
+import com.example.wear.presentation.theme.TestDataLayerTheme
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
-
         super.onCreate(savedInstanceState)
 
-        setTheme(android.R.style.Theme_DeviceDefault)
+        // Get the MainViewModel from the application
+        val mainApplication = application as MainApplication
+        val mainViewModel = mainApplication.getMainViewModel()
 
         setContent {
-            val mainViewModel = (application as MainApplication).getMainViewModel()
             WearApp(mainViewModel)
         }
+    }
+}
+
+@Composable
+fun WearAppPreview() {
+    TestDataLayerTheme {
+        // Preview can't access real ViewModel, so we create a mock one
+        // This is just for preview purposes
     }
 }

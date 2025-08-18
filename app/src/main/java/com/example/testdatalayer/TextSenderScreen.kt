@@ -11,16 +11,20 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
+import com.google.android.gms.wearable.Asset
 import com.google.android.gms.wearable.DataClient
-import com.google.android.gms.wearable.DataItem
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.io.ByteArrayOutputStream
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TextSenderScreen() {
+fun TextSenderScreen(
+    modifier: Modifier = Modifier,
+    onSendText: ((String) -> Unit)? = null
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var textMessage by remember { mutableStateOf("") }
@@ -28,8 +32,12 @@ fun TextSenderScreen() {
     var connectionStatus by remember { mutableStateOf("Checking connection...") }
     var connectedNodes by remember { mutableStateOf(emptyList<String>()) }
     var isDataLayerAvailable by remember { mutableStateOf(false) }
+    var selectedWffFile by remember { mutableStateOf("") }
 
     val dataClient = remember { Wearable.getDataClient(context) }
+
+    // Available .wff files
+    val wffFiles = listOf("watch_face_1.wff", "watchface2.wff")
 
     // Check connection status when screen loads
     LaunchedEffect(Unit) {
@@ -41,7 +49,8 @@ fun TextSenderScreen() {
                 isDataLayerAvailable = try {
                     val googleApiAvailability = GoogleApiAvailability.getInstance()
                     val result = googleApiAvailability.isGooglePlayServicesAvailable(context)
-                    result == ConnectionResult.SUCCESS    } catch (e: Exception) {
+                    result == ConnectionResult.SUCCESS
+                } catch (e: Exception) {
                     false
                 }
 
@@ -62,14 +71,14 @@ fun TextSenderScreen() {
     }
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
         Text(
-            text = "Send Text to Watch",
+            text = "Send Data to Watch",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 24.dp)
         )
@@ -124,32 +133,121 @@ fun TextSenderScreen() {
             }
         }
 
-        OutlinedTextField(
-            value = textMessage,
-            onValueChange = { textMessage = it },
-            label = { Text("Enter message") },
+        // Text Message Section
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
-        )
+                .padding(bottom = 16.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Send Text Message",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
 
-        Button(
-            onClick = {
-                scope.launch {
-                    try {
-                        sendStatus = "Sending..."
-                        sendTextToWatch(dataClient, textMessage)
-                        sendStatus = "Message sent successfully!\nTimestamp: ${System.currentTimeMillis()}"
-                    } catch (e: Exception) {
-                        sendStatus = "Failed to send: ${e.message}"
+                OutlinedTextField(
+                    value = textMessage,
+                    onValueChange = { textMessage = it },
+                    label = { Text("Enter message") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+                )
+
+                Button(
+                    onClick = {
+                        scope.launch {
+                            try {
+                                sendStatus = "Sending text..."
+                                sendTextToWatch(dataClient, textMessage)
+                                onSendText?.invoke(textMessage)
+                                sendStatus = "Text sent successfully!\nTimestamp: ${System.currentTimeMillis()}"
+                            } catch (e: Exception) {
+                                sendStatus = "Failed to send text: ${e.message}"
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = textMessage.isNotBlank() && connectedNodes.isNotEmpty()
+                ) {
+                    Text("Send Text to Watch")
+                }
+            }
+        }
+
+        // File Transfer Section
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Send Watch Face File (.wff)",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                // File selection dropdown
+                var expanded by remember { mutableStateOf(false) }
+
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                ) {
+                    OutlinedTextField(
+                        value = selectedWffFile.ifEmpty { "Select .wff file" },
+                        onValueChange = { },
+                        readOnly = true,
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        wffFiles.forEach { fileName ->
+                            DropdownMenuItem(
+                                text = { Text(fileName) },
+                                onClick = {
+                                    selectedWffFile = fileName
+                                    expanded = false
+                                }
+                            )
+                        }
                     }
                 }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = textMessage.isNotBlank() && connectedNodes.isNotEmpty()
-        ) {
-            Text("Send to Watch")
+
+                Button(
+                    onClick = {
+                        scope.launch {
+                            try {
+                                sendStatus = "Sending file $selectedWffFile..."
+                                sendFileToWatch(context, dataClient, selectedWffFile)
+                                sendStatus = "File $selectedWffFile sent successfully!\nTimestamp: ${System.currentTimeMillis()}"
+                            } catch (e: Exception) {
+                                sendStatus = "Failed to send file: ${e.message}"
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = selectedWffFile.isNotEmpty() && connectedNodes.isNotEmpty()
+                ) {
+                    Text("Send File to Watch")
+                }
+            }
         }
 
         // Refresh connection button
@@ -214,8 +312,8 @@ fun TextSenderScreen() {
                 Text(
                     text = "• Make sure watch is paired and connected\n" +
                             "• Both apps should be installed\n" +
-                            "• DataLayer path: /text\n" +
-                            "• Message key: 'message'\n" +
+                            "• Text path: /text\n" +
+                            "• File path: /file\n" +
                             "• Check logcat for detailed logs",
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -232,4 +330,45 @@ private suspend fun sendTextToWatch(dataClient: DataClient, message: String) {
 
     val putDataTask = dataClient.putDataItem(putDataReq.asPutDataRequest())
     putDataTask.await()
+}
+
+private suspend fun sendFileToWatch(context: android.content.Context, dataClient: DataClient, fileName: String) {
+    try {
+        // Read file from drawable resources
+        val resourceId = when (fileName) {
+            "watch_face_1.wff" -> context.resources.getIdentifier("watch_face_1", "raw", context.packageName)
+            "watchface2.wff" -> context.resources.getIdentifier("watchface2", "raw", context.packageName)
+            else -> throw IllegalArgumentException("Unknown file: $fileName")
+        }
+
+        if (resourceId == 0) {
+            throw IllegalArgumentException("File not found in resources: $fileName")
+        }
+
+        val inputStream = context.resources.openRawResource(resourceId)
+        val byteArrayOutputStream = ByteArrayOutputStream()
+        inputStream.copyTo(byteArrayOutputStream)
+        val fileBytes = byteArrayOutputStream.toByteArray()
+
+        inputStream.close()
+        byteArrayOutputStream.close()
+
+        // Create Asset from file bytes
+        val asset = Asset.createFromBytes(fileBytes)
+
+        // Create data item request
+        val putDataReq = PutDataMapRequest.create("/file").apply {
+            dataMap.putAsset("file_data", asset)
+            dataMap.putString("fileName", fileName)
+            dataMap.putLong("fileSize", fileBytes.size.toLong())
+            dataMap.putLong("timestamp", System.currentTimeMillis())
+        }
+
+        // Send to watch
+        val putDataTask = dataClient.putDataItem(putDataReq.asPutDataRequest())
+        putDataTask.await()
+
+    } catch (e: Exception) {
+        throw Exception("Failed to send file $fileName: ${e.message}", e)
+    }
 }

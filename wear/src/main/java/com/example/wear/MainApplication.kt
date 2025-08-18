@@ -14,21 +14,22 @@ class MainApplication : Application(), ViewModelStoreOwner {
     override val viewModelStore: ViewModelStore
         get() = appViewModelStore
 
+    private val mainViewModelFactory by lazy {
+        MainViewModel.Factory(this)
+    }
+
     private var _mainViewModel: MainViewModel? = null
 
     fun getMainViewModel(): MainViewModel {
         if (_mainViewModel == null) {
-            _mainViewModel = ViewModelProvider(
-                this,
-                ViewModelProvider.AndroidViewModelFactory.getInstance(this)
-            )[MainViewModel::class.java]
+            _mainViewModel = ViewModelProvider(this, mainViewModelFactory)[MainViewModel::class.java]
         }
         return _mainViewModel!!
     }
 
     override fun onCreate() {
         super.onCreate()
-        // Initialize the MainViewModel early
+        // Initialize the ViewModel early
         getMainViewModel()
     }
 }

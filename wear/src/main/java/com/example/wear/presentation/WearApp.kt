@@ -15,14 +15,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material.Card
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
-import androidx.wear.tooling.preview.devices.WearDevices
 import com.example.wear.MainViewModel
 import com.example.wear.presentation.theme.TestDataLayerTheme
 import com.google.android.gms.common.GoogleApiAvailability
@@ -143,6 +140,25 @@ fun WearApp(mainViewModel: MainViewModel) {
                         .padding(bottom = 16.dp)
                 )
 
+                // Display received file status
+                if (mainViewModel.receivedFileStatus != null) {
+                    Text(
+                        text = "File Status:",
+                        style = MaterialTheme.typography.title3,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    Text(
+                        text = mainViewModel.receivedFileStatus!!,
+                        style = MaterialTheme.typography.body1,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp)
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // Display events list
@@ -154,12 +170,13 @@ fun WearApp(mainViewModel: MainViewModel) {
                 )
 
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    modifier = Modifier.fillMaxSize()
                 ) {
                     items(mainViewModel.events) { event ->
                         Card(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 2.dp),
                             onClick = { }
                         ) {
                             Column(
@@ -172,58 +189,12 @@ fun WearApp(mainViewModel: MainViewModel) {
                                 )
                                 Text(
                                     text = event.text,
-                                    style = MaterialTheme.typography.caption2,
-                                    maxLines = 3
+                                    style = MaterialTheme.typography.caption2
                                 )
                             }
                         }
                     }
-
-                    if (mainViewModel.events.isEmpty()) {
-                        item {
-                            Text(
-                                text = "No events received yet",
-                                style = MaterialTheme.typography.caption2,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
                 }
-            }
-        }
-    }
-}
-
-@Preview(device = WearDevices.SMALL_ROUND, showSystemUi = true)
-@Composable
-fun DefaultPreview() {
-    TestDataLayerTheme {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colors.background)
-                .padding(16.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Text(
-                    text = "Message from Phone:",
-                    style = MaterialTheme.typography.title3,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-
-                Text(
-                    text = "Sample message from phone",
-                    style = MaterialTheme.typography.body1,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
             }
         }
     }
