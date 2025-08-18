@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">wear</string>
+    <!--
+    This string is used for square devices and overridden by hello_world in
+    values-round/strings.xml for round devices.
+    -->
+    <string name="hello_world">From the Square world,\nHello, %1$s!</string>
+    <string name="tile_label">Example tile</string>
+    <string name="complication_label">Example complication</string>
+    <string name="waiting">Waiting for data to arrive\u2026</string>
+    <string name="query_other_devices">Query for connected devices</string>
+    <string name="query_mobile_camera">Query for mobile camera</string>
+    <string name="no_device">No device provides the requested capabilities</string>
+    <string name="connected_nodes">Nodes: %1$s</string>
+    <string name="nodes">Nodes</string>
+    <string name="message">Message Received</string>
+    <string name="capability_changed">Capability Changed</string>
+    <string name="photo_placeholder">Photo placeholder</string>
+    <string name="captured_photo">Captured photo</string>
+    <string name="data_item_changed">Data Item Changed</string>
+    <string name="data_item_deleted">Data Item Deleted</string>
+    <string name="data_item_unknown">Data Item Unknown</string>
+</resources>
