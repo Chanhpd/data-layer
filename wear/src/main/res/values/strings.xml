@@ -20,4 +20,13 @@
     <string name="data_item_changed">Data Item Changed</string>
     <string name="data_item_deleted">Data Item Deleted</string>
     <string name="data_item_unknown">Data Item Unknown</string>
+
+    <string name="watch_face_name">I am Groot</string>
+    <string name="color_label">Color Theme</string>
+    <string name="color_theme_0">Bold</string>
+    <string name="color_theme_1">Magic</string>
+    <string name="color_theme_2">Breeze</string>
+    <string name="color_theme_3">Daytime</string>
+    <string name="color_theme_4">Relaxed</string>
+    <string name="color_theme_5">Smart</string>
 </resources>

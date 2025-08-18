@@ -1,0 +1,141 @@
+<?xml version="1.0"?>
+
+<WatchFace width="450" height="450">
+  <Metadata key="CLOCK_TYPE" value="ANALOG" />
+  <Metadata key="PREVIEW_TIME" value="10:08:32" />
+
+  <UserConfigurations>
+    <ColorConfiguration id="themeColor" displayName="color_label" defaultValue="0">
+      <!-- Minimalist Black & Gold -->
+      <ColorOption id="0" displayName="Black Gold" colors="#FFD700 #FFFFFF #FF6B6B #000000 #1A1A1A" />
+      <!-- Nordic Blue -->
+      <ColorOption id="1" displayName="Nordic" colors="#4A90E2 #FFFFFF #FF4757 #1E1E1E #2C3E50" />
+      <!-- Rose Elegant -->
+      <ColorOption id="2" displayName="Rose" colors="#FF6B9D #FFFFFF #FF4757 #2C2C2C #3C2E3D" />
+      <!-- Forest Green -->
+      <ColorOption id="3" displayName="Forest" colors="#2ECC71 #FFFFFF #E74C3C #1B1B1B #27AE60" />
+      <!-- Silver Classic -->
+      <ColorOption id="4" displayName="Silver" colors="#C0C0C0 #FFFFFF #FF6B6B #1A1A1A #34495E" />
+      <!-- Orange Sunset -->
+      <ColorOption id="5" displayName="Sunset" colors="#FF8C42 #FFFFFF #E74C3C #1C1C1C #D35400" />
+    </ColorConfiguration>
+  </UserConfigurations>
+
+  <Scene backgroundColor="[CONFIGURATION.themeColor.3]">
+
+    <!-- Main Watch Face -->
+    <Group x="25" y="25" width="400" height="400" name="mainFace">
+      <PartDraw x="0" y="0" width="400" height="400">
+        <!-- Outer rim -->
+        <Ellipse x="0" y="0" width="400" height="400">
+          <Fill color="[CONFIGURATION.themeColor.4]" />
+        </Ellipse>
+        <!-- Main face -->
+        <Ellipse x="20" y="20" width="360" height="360">
+          <Fill color="[CONFIGURATION.themeColor.3]" />
+        </Ellipse>
+      </PartDraw>
+    </Group>
+
+    <!-- Hour Markers - Clean and Minimal -->
+    <Group x="0" y="0" width="450" height="450" name="markers">
+      <!-- 12 o'clock -->
+      <PartDraw x="223" y="50" width="4" height="30">
+        <Rectangle x="0" y="0" width="4" height="30">
+          <Fill color="[CONFIGURATION.themeColor.0]" />
+        </Rectangle>
+      </PartDraw>
+
+      <!-- 3 o'clock -->
+      <PartDraw x="370" y="223" width="30" height="4">
+        <Rectangle x="0" y="0" width="30" height="4">
+          <Fill color="[CONFIGURATION.themeColor.0]" />
+        </Rectangle>
+      </PartDraw>
+
+      <!-- 6 o'clock -->
+      <PartDraw x="223" y="370" width="4" height="30">
+        <Rectangle x="0" y="0" width="4" height="30">
+          <Fill color="[CONFIGURATION.themeColor.0]" />
+        </Rectangle>
+      </PartDraw>
+
+      <!-- 9 o'clock -->
+      <PartDraw x="50" y="223" width="30" height="4">
+        <Rectangle x="0" y="0" width="30" height="4">
+          <Fill color="[CONFIGURATION.themeColor.0]" />
+        </Rectangle>
+      </PartDraw>
+
+      <!-- Smaller hour dots -->
+      <PartDraw x="222" y="90" width="6" height="6">
+        <Ellipse x="0" y="0" width="6" height="6">
+          <Fill color="[CONFIGURATION.themeColor.0]" />
+        </Ellipse>
+      </PartDraw>
+
+      <PartDraw x="222" y="354" width="6" height="6">
+        <Ellipse x="0" y="0" width="6" height="6">
+          <Fill color="[CONFIGURATION.themeColor.0]" />
+        </Ellipse>
+      </PartDraw>
+
+      <PartDraw x="354" y="222" width="6" height="6">
+        <Ellipse x="0" y="0" width="6" height="6">
+          <Fill color="[CONFIGURATION.themeColor.0]" />
+        </Ellipse>
+      </PartDraw>
+
+      <PartDraw x="90" y="222" width="6" height="6">
+        <Ellipse x="0" y="0" width="6" height="6">
+          <Fill color="[CONFIGURATION.themeColor.0]" />
+        </Ellipse>
+      </PartDraw>
+    </Group>
+
+    <!-- Clock Hands -->
+    <AnalogClock x="0" y="0" width="450" height="450">
+
+      <!-- Hour Hand -->
+      <HourHand resource="hour" x="220" y="120" width="10" height="130" pivotX="0.5"
+          pivotY="0.92" tintColor="[CONFIGURATION.themeColor.1]">
+      </HourHand>
+
+      <!-- Minute Hand -->
+      <MinuteHand resource="minute" x="222" y="80" width="6" height="170" pivotX="0.5"
+          pivotY="0.94" tintColor="[CONFIGURATION.themeColor.1]">
+      </MinuteHand>
+
+      <!-- Second Hand -->
+      <SecondHand resource="second" x="224" y="60" width="2" height="190" pivotX="0.5"
+          pivotY="0.95" tintColor="[CONFIGURATION.themeColor.2]">
+        <Variant mode="AMBIENT" target="alpha" value="0" />
+        <Sweep frequency="15" />
+      </SecondHand>
+    </AnalogClock>
+
+    <!-- Center Dot -->
+    <PartDraw x="218" y="218" width="14" height="14">
+      <Ellipse x="0" y="0" width="14" height="14">
+        <Fill color="[CONFIGURATION.themeColor.0]" />
+      </Ellipse>
+      <Ellipse x="4" y="4" width="6" height="6">
+        <Fill color="[CONFIGURATION.themeColor.3]" />
+      </Ellipse>
+    </PartDraw>
+
+    <!-- Subtle brand element -->
+    <PartDraw x="210" y="160" width="30" height="8">
+      <Ellipse x="0" y="2" width="4" height="4">
+        <Fill color="[CONFIGURATION.themeColor.0]" />
+      </Ellipse>
+      <Ellipse x="13" y="2" width="4" height="4">
+        <Fill color="[CONFIGURATION.themeColor.0]" />
+      </Ellipse>
+      <Ellipse x="26" y="2" width="4" height="4">
+        <Fill color="[CONFIGURATION.themeColor.0]" />
+      </Ellipse>
+    </PartDraw>
+
+  </Scene>
+</WatchFace>
