@@ -58,45 +58,72 @@ class WatchFaceParser {
                 val extractedFiles = extractZipFile(wffFile, extractDir)
                 Log.d(TAG, "Extracted ${extractedFiles.size} files")
 
-                // Parse manifest.json
-                val manifestFile = File(extractDir, MANIFEST_FILE)
-                if (!manifestFile.exists()) {
+                // Find the actual location of manifest.json
+                // It could be in root directory or in a subdirectory like "watchface/"
+                val manifestFile = findFile(extractDir, MANIFEST_FILE)
+                if (manifestFile == null || !manifestFile.exists()) {
                     Log.e(TAG, "manifest.json not found in watch face file")
+                    Log.d(TAG, "Extracted files: ${extractedFiles.joinToString(", ")}")
                     return@withContext null
                 }
 
                 val manifest = parseManifest(manifestFile)
                 Log.d(TAG, "Parsed manifest: ${manifest.name} v${manifest.version}")
 
-                // Load preview image
-                val previewFile = File(extractDir, PREVIEW_FILE)
+                // Find preview image in the same directory as manifest
+                val manifestDir = manifestFile.parentFile!!
+                val previewFile = File(manifestDir, PREVIEW_FILE)
                 val previewBitmap = if (previewFile.exists()) {
                     BitmapFactory.decodeFile(previewFile.absolutePath)
                 } else {
-                    Log.w(TAG, "Preview image not found")
-                    null
+                    // Try to find preview.png anywhere in the extracted files
+                    val foundPreview = findFile(extractDir, PREVIEW_FILE)
+                    if (foundPreview?.exists() == true) {
+                        BitmapFactory.decodeFile(foundPreview.absolutePath)
+                    } else {
+                        Log.w(TAG, "Preview image not found")
+                        null
+                    }
                 }
 
-                // Read watchface.xml
-                val watchfaceXmlFile = File(extractDir, WATCHFACE_XML)
+                // Find watchface.xml in the same directory as manifest
+                val watchfaceXmlFile = File(manifestDir, WATCHFACE_XML)
                 val watchfaceXml = if (watchfaceXmlFile.exists()) {
                     watchfaceXmlFile.readText()
                 } else {
-                    Log.w(TAG, "watchface.xml not found")
-                    null
+                    // Try to find watchface.xml anywhere in the extracted files
+                    val foundXml = findFile(extractDir, WATCHFACE_XML)
+                    if (foundXml?.exists() == true) {
+                        foundXml.readText()
+                    } else {
+                        Log.w(TAG, "watchface.xml not found")
+                        null
+                    }
                 }
 
-                // Setup resource directories
-                val resourcesDir = File(extractDir, RESOURCES_DIR)
+                // Setup resource directories - look for resources in the same directory as manifest
+                val resourcesDir = File(manifestDir, RESOURCES_DIR)
                 val imagesDir = File(resourcesDir, IMAGES_DIR)
                 val fontsDir = File(resourcesDir, FONTS_DIR)
 
+                // If resources not found in manifest directory, try to find it anywhere
+                val actualResourcesDir = if (resourcesDir.exists()) {
+                    resourcesDir
+                } else {
+                    findDirectory(extractDir, RESOURCES_DIR) ?: resourcesDir
+                }
+
+                val actualImagesDir = File(actualResourcesDir, IMAGES_DIR)
+                val actualFontsDir = File(actualResourcesDir, FONTS_DIR)
+
                 // Create directories if they don't exist
-                resourcesDir.mkdirs()
-                imagesDir.mkdirs()
-                fontsDir.mkdirs()
+                actualResourcesDir.mkdirs()
+                actualImagesDir.mkdirs()
+                actualFontsDir.mkdirs()
 
                 Log.d(TAG, "Successfully parsed watch face: ${manifest.name}")
+                Log.d(TAG, "Manifest found at: ${manifestFile.absolutePath}")
+                Log.d(TAG, "Resources directory: ${actualResourcesDir.absolutePath}")
 
                 WatchFaceResources(
                     manifest = manifest,
@@ -158,5 +185,43 @@ class WatchFaceParser {
             description = jsonObject.optString("description", null),
             previewImage = jsonObject.optString("previewImage", null)
         )
+    }
+
+    // Helper function to find a file recursively in a directory
+    private fun findFile(directory: File, fileName: String): File? {
+        if (!directory.exists() || !directory.isDirectory) return null
+
+        // Check if file exists in current directory
+        val directFile = File(directory, fileName)
+        if (directFile.exists()) {
+            return directFile
+        }
+
+        // Search in subdirectories
+        directory.listFiles()?.forEach { file ->
+            if (file.isDirectory) {
+                val found = findFile(file, fileName)
+                if (found != null) return found
+            }
+        }
+
+        return null
+    }
+
+    // Helper function to find a directory recursively
+    private fun findDirectory(directory: File, dirName: String): File? {
+        if (!directory.exists() || !directory.isDirectory) return null
+
+        directory.listFiles()?.forEach { file ->
+            if (file.isDirectory) {
+                if (file.name == dirName) {
+                    return file
+                }
+                val found = findDirectory(file, dirName)
+                if (found != null) return found
+            }
+        }
+
+        return null
     }
 }
