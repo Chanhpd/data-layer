@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.util.Log
+import com.example.wear.installer.ApkInstaller
+import com.example.wear.installer.InstallResult
 import com.example.wear.watchface.WatchFaceManager
 import com.example.wear.watchface.WatchFaceInstallResult
 import com.google.android.gms.wearable.Asset
@@ -277,41 +279,52 @@ class DataLayerListenerService : WearableListenerService() {
         }
     }
 
-    private fun installApk(file: File?) {
+    private suspend fun installApk(file: File?) {
         try {
             if (file == null || !file.exists()) {
                 Log.e(TAG, "APK file does not exist or is null")
+                val application = application as? MainApplication
+                application?.getMainViewModel()?.updateApkInstallStatus("APK file not found")
                 return
             }
 
-            Log.d(TAG, "Installing APK: ${file.absolutePath}")
+            Log.d(TAG, "Starting advanced APK installation: ${file.absolutePath}")
 
-            // Create an intent to install the APK
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-                    // For Android 7.0 and above, use FileProvider
-                    val uri = androidx.core.content.FileProvider.getUriForFile(
-                        this@DataLayerListenerService,
-                        "${packageName}.fileprovider",
-                        file
-                    )
-                    setDataAndType(uri, "application/vnd.android.package-archive")
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                } else {
-                    // For older Android versions
-                    setDataAndType(android.net.Uri.fromFile(file), "application/vnd.android.package-archive")
+            // Update status to show installation is starting
+            val application = application as? MainApplication
+            application?.getMainViewModel()?.updateApkInstallStatus("Starting APK installation: ${file.name}")
+
+            // Create APK installer instance
+            val apkInstaller = ApkInstaller(this)
+
+            // Check if we can install packages
+            if (!apkInstaller.canInstallPackages()) {
+                Log.w(TAG, "App cannot install packages. Requesting permission...")
+                application?.getMainViewModel()?.updateApkInstallStatus("Permission needed to install APK")
+
+                // Try to request permission
+                val permissionIntent = apkInstaller.requestInstallPermission()
+                if (permissionIntent != null) {
+                    startActivity(permissionIntent)
+                    application?.getMainViewModel()?.updateApkInstallStatus("Please grant install permission and try again")
+                    return
                 }
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
 
-            // Start the installation intent
-            startActivity(intent)
-            Log.d(TAG, "APK installation intent started")
+            // Install the APK using advanced installer
+            val installResult = apkInstaller.installApk(file)
 
-            // Update status
-            val application = application as? MainApplication
-            application?.getMainViewModel()?.updateApkInstallStatus("APK installation started: ${file.name}")
+            when (installResult) {
+                is InstallResult.Success -> {
+                    Log.d(TAG, "APK installation initiated successfully: ${installResult.message}")
+                    application?.getMainViewModel()?.updateApkInstallStatus("Installing APK: ${installResult.message}")
+                }
+
+                is InstallResult.Error -> {
+                    Log.e(TAG, "APK installation failed: ${installResult.message}")
+                    application?.getMainViewModel()?.updateApkInstallStatus("APK installation failed: ${installResult.message}")
+                }
+            }
 
         } catch (exception: Exception) {
             Log.e(TAG, "Failed to install APK: ${file?.absolutePath}", exception)

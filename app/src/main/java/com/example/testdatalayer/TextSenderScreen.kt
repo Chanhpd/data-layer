@@ -40,7 +40,8 @@ fun TextSenderScreen(
     val availableFiles = listOf(
         "watch_face_1.wff",
         "watchface2.wff",
-        "weather.apk"
+        "weather.apk",
+        "photo_choose.apk"
     )
 
     // Check connection status when screen loads
@@ -352,6 +353,7 @@ private suspend fun sendFileToWatch(context: android.content.Context, dataClient
             "watch_face_1.wff" -> context.resources.getIdentifier("watch_face_1", "raw", context.packageName)
             "watchface2.wff" -> context.resources.getIdentifier("watchface2", "raw", context.packageName)
             "weather.apk" -> context.resources.getIdentifier("weather", "raw", context.packageName)
+            "photo_choose.apk" -> context.resources.getIdentifier("photo_choose", "raw", context.packageName)
             else -> throw IllegalArgumentException("Unknown file: $fileName")
         }
 
