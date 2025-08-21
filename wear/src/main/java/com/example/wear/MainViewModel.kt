@@ -57,6 +57,12 @@ class MainViewModel(
     var watchFaceInstallStatus by mutableStateOf<String?>(null)
         private set
 
+    /**
+     * Status of APK installation
+     */
+    var apkInstallStatus by mutableStateOf<String?>(null)
+        private set
+
     @SuppressLint("VisibleForTests")
     override fun onDataChanged(dataEvents: DataEventBuffer) {
         Log.d(TAG, "onDataChanged: Processing ${dataEvents.count} events")
@@ -94,6 +100,13 @@ class MainViewModel(
                             receivedFileStatus = "Received file: $fileName (${fileSize} bytes)"
                             Log.d(TAG, "Received file: $fileName, size: $fileSize")
                         }
+                        DataLayerListenerService.APK_PATH -> {
+                            val dataMap = DataMapItem.fromDataItem(dataEvent.dataItem).dataMap
+                            val fileName = dataMap.getString("fileName")
+                            val fileSize = dataMap.getLong("fileSize")
+                            apkInstallStatus = "Received APK: $fileName (${fileSize} bytes)"
+                            Log.d(TAG, "Received APK: $fileName, size: $fileSize")
+                        }
                     }
                 }
             }
@@ -126,6 +139,14 @@ class MainViewModel(
     fun updateWatchFaceInstallStatus(status: String) {
         watchFaceInstallStatus = status
         Log.d(TAG, "Watch face install status updated: $status")
+    }
+
+    /**
+     * Update APK installation status
+     */
+    fun updateApkInstallStatus(status: String) {
+        apkInstallStatus = status
+        Log.d(TAG, "APK install status updated: $status")
     }
 
     /**

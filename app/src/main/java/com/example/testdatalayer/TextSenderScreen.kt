@@ -36,8 +36,12 @@ fun TextSenderScreen(
 
     val dataClient = remember { Wearable.getDataClient(context) }
 
-    // Available .wff files
-    val wffFiles = listOf("watch_face_1.wff", "watchface2.wff")
+    // Available files (.wff and .apk)
+    val availableFiles = listOf(
+        "watch_face_1.wff",
+        "watchface2.wff",
+        "weather.apk"
+    )
 
     // Check connection status when screen loads
     LaunchedEffect(Unit) {
@@ -189,7 +193,7 @@ fun TextSenderScreen(
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = "Send Watch Face File (.wff)",
+                    text = "Send Files (.wff/.apk)",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
@@ -205,7 +209,7 @@ fun TextSenderScreen(
                         .padding(bottom = 16.dp)
                 ) {
                     OutlinedTextField(
-                        value = selectedWffFile.ifEmpty { "Select .wff file" },
+                        value = selectedWffFile.ifEmpty { "Select file" },
                         onValueChange = { },
                         readOnly = true,
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
@@ -218,9 +222,18 @@ fun TextSenderScreen(
                         expanded = expanded,
                         onDismissRequest = { expanded = false }
                     ) {
-                        wffFiles.forEach { fileName ->
+                        availableFiles.forEach { fileName ->
                             DropdownMenuItem(
-                                text = { Text(fileName) },
+                                text = {
+                                    Column {
+                                        Text(fileName)
+                                        Text(
+                                            text = if (fileName.endsWith(".wff")) "Watch Face" else "Android App",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                },
                                 onClick = {
                                     selectedWffFile = fileName
                                     expanded = false
@@ -334,10 +347,11 @@ private suspend fun sendTextToWatch(dataClient: DataClient, message: String) {
 
 private suspend fun sendFileToWatch(context: android.content.Context, dataClient: DataClient, fileName: String) {
     try {
-        // Read file from drawable resources
+        // Read file from raw resources
         val resourceId = when (fileName) {
             "watch_face_1.wff" -> context.resources.getIdentifier("watch_face_1", "raw", context.packageName)
             "watchface2.wff" -> context.resources.getIdentifier("watchface2", "raw", context.packageName)
+            "weather.apk" -> context.resources.getIdentifier("weather", "raw", context.packageName)
             else -> throw IllegalArgumentException("Unknown file: $fileName")
         }
 
@@ -356,10 +370,15 @@ private suspend fun sendFileToWatch(context: android.content.Context, dataClient
         // Create Asset from file bytes
         val asset = Asset.createFromBytes(fileBytes)
 
+        // Determine file type and use appropriate path
+        val dataPath = if (fileName.endsWith(".apk")) "/apk" else "/file"
+        val fileType = if (fileName.endsWith(".apk")) "apk" else if (fileName.endsWith(".wff")) "wff" else "unknown"
+
         // Create data item request
-        val putDataReq = PutDataMapRequest.create("/file").apply {
+        val putDataReq = PutDataMapRequest.create(dataPath).apply {
             dataMap.putAsset("file_data", asset)
             dataMap.putString("fileName", fileName)
+            dataMap.putString("fileType", fileType)
             dataMap.putLong("fileSize", fileBytes.size.toLong())
             dataMap.putLong("timestamp", System.currentTimeMillis())
         }

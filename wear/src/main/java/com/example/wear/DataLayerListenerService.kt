@@ -30,6 +30,7 @@ class DataLayerListenerService : WearableListenerService() {
         const val TEXT_PATH = "/text"
         const val IMAGE_PATH = "/image"
         const val FILE_PATH = "/file"
+        const val APK_PATH = "/apk"
         const val IMAGE_KEY = "photo"
         const val FILE_KEY = "file_data"
         private const val TAG = "DataLayerService"
@@ -155,6 +156,40 @@ class DataLayerListenerService : WearableListenerService() {
                             Log.d(TAG, "Received image data")
                             // Image handling can be added here if needed
                         }
+
+                        APK_PATH -> {
+                            val dataMap = DataMapItem.fromDataItem(dataEvent.dataItem).dataMap
+                            val fileName = dataMap.getString("fileName")
+                            val asset = dataMap.getAsset(FILE_KEY)
+
+                            Log.d(TAG, "Received APK: $fileName")
+
+                            // Handle APK asset
+                            scope.launch {
+                                try {
+                                    if (asset != null && fileName != null) {
+                                        val savedFile = saveAssetToFile(asset, fileName)
+
+                                        // Install the APK
+                                        installApk(savedFile)
+
+                                        // Send acknowledgment back to phone
+                                        val nodeId = uri.host!!
+                                        val payload = "APK received: $fileName".toByteArray()
+                                        messageClient.sendMessage(
+                                            nodeId,
+                                            DATA_ITEM_RECEIVED_PATH,
+                                            payload
+                                        ).await()
+                                        Log.d(TAG, "APK acknowledgment sent successfully")
+                                    }
+                                } catch (cancellationException: CancellationException) {
+                                    throw cancellationException
+                                } catch (exception: Exception) {
+                                    Log.e(TAG, "Failed to process APK or send acknowledgment", exception)
+                                }
+                            }
+                        }
                     }
                 }
                 DataEvent.TYPE_DELETED -> {
@@ -239,6 +274,51 @@ class DataLayerListenerService : WearableListenerService() {
             application?.getMainViewModel()?.updateWatchFaceInstallStatus(
                 "Failed to install $fileName: ${exception.message}"
             )
+        }
+    }
+
+    private fun installApk(file: File?) {
+        try {
+            if (file == null || !file.exists()) {
+                Log.e(TAG, "APK file does not exist or is null")
+                return
+            }
+
+            Log.d(TAG, "Installing APK: ${file.absolutePath}")
+
+            // Create an intent to install the APK
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                    // For Android 7.0 and above, use FileProvider
+                    val uri = androidx.core.content.FileProvider.getUriForFile(
+                        this@DataLayerListenerService,
+                        "${packageName}.fileprovider",
+                        file
+                    )
+                    setDataAndType(uri, "application/vnd.android.package-archive")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                } else {
+                    // For older Android versions
+                    setDataAndType(android.net.Uri.fromFile(file), "application/vnd.android.package-archive")
+                }
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+
+            // Start the installation intent
+            startActivity(intent)
+            Log.d(TAG, "APK installation intent started")
+
+            // Update status
+            val application = application as? MainApplication
+            application?.getMainViewModel()?.updateApkInstallStatus("APK installation started: ${file.name}")
+
+        } catch (exception: Exception) {
+            Log.e(TAG, "Failed to install APK: ${file?.absolutePath}", exception)
+
+            // Update status with error
+            val application = application as? MainApplication
+            application?.getMainViewModel()?.updateApkInstallStatus("Failed to install APK: ${exception.message}")
         }
     }
 
